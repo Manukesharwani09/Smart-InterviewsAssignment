@@ -1,0 +1,118 @@
+<section
+  class="min-h-[calc(100vh-4rem)] text-white grid gap-8 px-6 py-10 lg:grid-cols-[1.15fr_0.85fr] xl:px-16"
+>
+  <aside
+    class="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-cyan-400/25 via-fuchsia-500/15 to-slate-950 px-8 py-10 shadow-[0_45px_120px_rgba(5,7,18,0.65)]"
+  >
+    <span class="text-xs uppercase tracking-[0.3rem] text-white/70">TaskTrackr</span>
+    <h1 class="mt-6 text-3xl lg:text-4xl font-semibold leading-tight">Welcome back, strategist</h1>
+    <p class="mt-4 text-base text-white/75 max-w-xl">
+      Keep the rhythm going with instant access to insights, overdue nudges, and the next thing that deserves
+      your focus.
+    </p>
+
+    <div class="mt-10 grid gap-4 sm:grid-cols-3">
+      <div class="rounded-3xl border border-white/15 bg-white/5 p-4 text-center">
+        <p class="text-[0.7rem] uppercase tracking-wide text-white/70">Average time saved</p>
+        <p class="mt-2 text-2xl font-semibold">11h / wk</p>
+      </div>
+      <div class="rounded-3xl border border-white/15 bg-white/5 p-4 text-center">
+        <p class="text-[0.7rem] uppercase tracking-wide text-white/70">Teams onboarded</p>
+        <p class="mt-2 text-2xl font-semibold">320+</p>
+      </div>
+      <div class="rounded-3xl border border-white/15 bg-white/5 p-4 text-center">
+        <p class="text-[0.7rem] uppercase tracking-wide text-white/70">Automation coverage</p>
+        <p class="mt-2 text-2xl font-semibold">74%</p>
+      </div>
+    </div>
+
+    <div class="mt-12 flex flex-wrap gap-4 text-sm text-white/75">
+      <span class="rounded-full border border-white/20 bg-white/5 px-4 py-2">SOC2 ready</span>
+      <span class="rounded-full border border-white/20 bg-white/5 px-4 py-2">Playbooks library</span>
+      <span class="rounded-full border border-white/20 bg-white/5 px-4 py-2">AI copilots</span>
+    </div>
+  </aside>
+
+  <div
+    class="rounded-[28px] border border-white/10 bg-white/5 backdrop-blur-3xl p-6 sm:p-8 shadow-[0_30px_90px_rgba(3,5,15,0.6)] flex flex-col gap-6"
+  >
+    <header class="space-y-2">
+      <p class="text-sm uppercase tracking-[0.35rem] text-cyan-200/70">Secure portal</p>
+      <h2 class="text-2xl font-semibold">{{ title }}</h2>
+      <p class="text-white/70">{{ subtitle }}</p>
+    </header>
+
+    <form class="space-y-5" [formGroup]="loginForm" (ngSubmit)="submit()" novalidate>
+      <div class="space-y-2" [ngClass]="{ 'text-rose-300': showError(emailCtrl) }">
+        <label class="text-sm font-medium text-white/80" for="email">Work email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="alex@team.io"
+          formControlName="email"
+          autocomplete="email"
+          class="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-base text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-300/70"
+          [ngClass]="{ 'border-rose-400/70 focus:ring-rose-300': showError(emailCtrl) }"
+        />
+        <small class="text-xs text-rose-300" *ngIf="showError(emailCtrl)">
+          Please enter a valid email address.
+        </small>
+      </div>
+
+      <div class="space-y-2" [ngClass]="{ 'text-rose-300': showError(passwordCtrl) }">
+        <label class="text-sm font-medium text-white/80" for="password">Password</label>
+        <div
+          class="flex items-center rounded-2xl border border-white/15 bg-white/5 px-2 focus-within:ring-2 focus-within:ring-cyan-300/70"
+          [ngClass]="{ 'border-rose-400/70 focus-within:ring-rose-300': showError(passwordCtrl) }"
+        >
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="••••••••"
+            formControlName="password"
+            autocomplete="current-password"
+            class="flex-1 bg-transparent px-2 py-3 text-white placeholder-white/40 focus:outline-none"
+          />
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+            (click)="togglePasswordVisibility()"
+          >
+            {{ showPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        <small class="text-xs text-rose-300" *ngIf="showError(passwordCtrl)">
+          Password must be at least 8 characters.
+        </small>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-4 text-sm text-white/70">
+        <label class="inline-flex items-center gap-2 font-medium">
+          <input type="checkbox" formControlName="remember" class="size-4 rounded border-white/30 bg-transparent" />
+          Keep me signed in
+        </label>
+        <a class="text-cyan-200 underline-offset-4 transition hover:text-white" href="mailto:support@tasktrackr.app">
+          Forgot password?
+        </a>
+      </div>
+
+      <button
+        class="w-full rounded-2xl bg-gradient-to-r from-cyan-300 via-indigo-400 to-violet-500 px-4 py-3 text-base font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+        type="submit"
+        [disabled]="loginForm.invalid || isSubmitting"
+      >
+        {{ isSubmitting ? 'Signing you in…' : 'Access workspace' }}
+      </button>
+
+      <p class="text-sm text-rose-300" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="text-sm text-emerald-300" *ngIf="!errorMessage && serverMessage">{{ serverMessage }}</p>
+    </form>
+
+    <footer class="text-sm text-white/70">
+      <p>
+        New here?
+        <a routerLink="/auth/signup" class="font-semibold text-cyan-200 underline-offset-4 hover:text-white">Create an account</a>
+      </p>
+    </footer>
+  </div>
+</section>

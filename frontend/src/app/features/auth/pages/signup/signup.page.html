@@ -1,0 +1,183 @@
+<section
+  class="min-h-[calc(100vh-4rem)] text-white grid gap-8 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr] xl:px-16"
+>
+  <aside
+    class="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-fuchsia-400/25 via-cyan-400/10 to-slate-950 px-8 py-10 shadow-[0_45px_120px_rgba(5,7,18,0.6)]"
+  >
+    <p class="text-xs uppercase tracking-[0.3rem] text-white/70">Scale rituals</p>
+    <h1 class="mt-6 text-3xl lg:text-4xl font-semibold leading-tight">Onboard your team in minutes</h1>
+    <p class="mt-4 text-base text-white/75 max-w-xl">
+      Launch a calmer workspace with async approvals, milestone checkpoints, and permissions that flex with
+      every squad.
+    </p>
+
+    <ul class="mt-10 grid gap-4 text-sm sm:grid-cols-2">
+      <li class="rounded-3xl border border-white/15 bg-white/5 p-4">
+        <p class="text-[0.7rem] uppercase tracking-wide text-white/70">Setup time</p>
+        <p class="mt-2 text-2xl font-semibold">8 mins avg</p>
+      </li>
+      <li class="rounded-3xl border border-white/15 bg-white/5 p-4">
+        <p class="text-[0.7rem] uppercase tracking-wide text-white/70">Security</p>
+        <p class="mt-2 text-2xl font-semibold">SOC2 + SSO</p>
+      </li>
+      <li class="rounded-3xl border border-white/15 bg-white/5 p-4">
+        <p class="text-[0.7rem] uppercase tracking-wide text-white/70">Viewer seats</p>
+        <p class="mt-2 text-2xl font-semibold">Unlimited</p>
+      </li>
+      <li class="rounded-3xl border border-white/15 bg-white/5 p-4">
+        <p class="text-[0.7rem] uppercase tracking-wide text-white/70">Automation</p>
+        <p class="mt-2 text-2xl font-semibold">40+ flows</p>
+      </li>
+    </ul>
+
+    <div class="mt-12 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-widest text-white/70">
+      <span class="rounded-full border border-white/20 bg-white/5 px-4 py-2">SOC2 ready</span>
+      <span class="rounded-full border border-white/20 bg-white/5 px-4 py-2">SCIM & SSO</span>
+      <span class="rounded-full border border-white/20 bg-white/5 px-4 py-2">Audit trails</span>
+    </div>
+  </aside>
+
+  <div
+    class="rounded-[28px] border border-white/10 bg-white/5 backdrop-blur-3xl p-6 sm:p-8 shadow-[0_30px_90px_rgba(3,5,15,0.6)] flex flex-col gap-6"
+  >
+    <header class="space-y-2">
+      <p class="text-sm uppercase tracking-[0.35rem] text-fuchsia-200/70">Workspace setup</p>
+      <h2 class="text-2xl font-semibold">{{ title }}</h2>
+      <p class="text-white/70">{{ subtitle }}</p>
+    </header>
+
+    <form class="space-y-5" [formGroup]="signupForm" (ngSubmit)="submit()" novalidate>
+      <div class="space-y-2" [ngClass]="{ 'text-rose-300': showError(nameCtrl) }">
+        <label class="text-sm font-medium text-white/80" for="fullName">Full name</label>
+        <input
+          id="fullName"
+          type="text"
+          placeholder="Jordan Alvarez"
+          formControlName="name"
+          autocomplete="name"
+          class="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-base text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-fuchsia-300/70"
+          [ngClass]="{ 'border-rose-400/70 focus:ring-rose-300': showError(nameCtrl) }"
+        />
+        <small class="text-xs text-rose-300" *ngIf="showError(nameCtrl)">
+          Please tell us who we are setting up.
+        </small>
+      </div>
+
+      <div class="space-y-2" [ngClass]="{ 'text-rose-300': showError(usernameCtrl) }">
+        <label class="text-sm font-medium text-white/80" for="username">Workspace handle</label>
+        <input
+          id="username"
+          type="text"
+          placeholder="team-titan"
+          formControlName="username"
+          autocomplete="username"
+          class="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-base text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-fuchsia-300/70"
+          [ngClass]="{ 'border-rose-400/70 focus:ring-rose-300': showError(usernameCtrl) }"
+        />
+        <small class="text-xs text-rose-300" *ngIf="showError(usernameCtrl)">
+          Use 3-24 lowercase letters, numbers, dashes, or underscores.
+        </small>
+      </div>
+
+      <div class="space-y-2" [ngClass]="{ 'text-rose-300': showError(emailCtrl) }">
+        <label class="text-sm font-medium text-white/80" for="signupEmail">Work email</label>
+        <input
+          id="signupEmail"
+          type="email"
+          placeholder="you@team.com"
+          formControlName="email"
+          autocomplete="email"
+          class="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-base text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-fuchsia-300/70"
+          [ngClass]="{ 'border-rose-400/70 focus:ring-rose-300': showError(emailCtrl) }"
+        />
+        <small class="text-xs text-rose-300" *ngIf="showError(emailCtrl)">
+          Use a valid email to receive verification.
+        </small>
+      </div>
+
+      <div class="space-y-2" [ngClass]="{ 'text-rose-300': showError(passwordCtrl) }">
+        <label class="text-sm font-medium text-white/80" for="signupPassword">Password</label>
+        <div
+          class="flex items-center rounded-2xl border border-white/15 bg-white/5 px-2 focus-within:ring-2 focus-within:ring-fuchsia-300/70"
+          [ngClass]="{ 'border-rose-400/70 focus-within:ring-rose-300': showError(passwordCtrl) }"
+        >
+          <input
+            id="signupPassword"
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="At least 8 characters"
+            formControlName="password"
+            autocomplete="new-password"
+            class="flex-1 bg-transparent px-2 py-3 text-white placeholder-white/40 focus:outline-none"
+          />
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+            (click)="togglePassword('primary')"
+          >
+            {{ showPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        <small class="text-xs text-rose-300" *ngIf="showError(passwordCtrl)">
+          Include uppercase, lowercase, and a number.
+        </small>
+      </div>
+
+      <div class="space-y-2" [ngClass]="{ 'text-rose-300': passwordMismatch }">
+        <label class="text-sm font-medium text-white/80" for="confirmPassword">Confirm password</label>
+        <div
+          class="flex items-center rounded-2xl border border-white/15 bg-white/5 px-2 focus-within:ring-2 focus-within:ring-fuchsia-300/70"
+          [ngClass]="{ 'border-rose-400/70 focus-within:ring-rose-300': passwordMismatch }"
+        >
+          <input
+            id="confirmPassword"
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            placeholder="Repeat password"
+            formControlName="confirmPassword"
+            autocomplete="new-password"
+            class="flex-1 bg-transparent px-2 py-3 text-white placeholder-white/40 focus:outline-none"
+          />
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+            (click)="togglePassword('confirm')"
+          >
+            {{ showConfirmPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        <small class="text-xs text-rose-300" *ngIf="passwordMismatch">Passwords must match.</small>
+      </div>
+
+      <label
+        class="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/0 px-4 py-3 text-sm text-white/70 transition hover:bg-white/5"
+        [ngClass]="{ 'border-rose-400/70 text-rose-300': showError(acceptTermsCtrl) }"
+      >
+        <input type="checkbox" formControlName="acceptTerms" class="mt-1 size-4 rounded border-white/30 bg-transparent" />
+        <span class="space-y-1 text-left">
+          I agree to the <a class="text-fuchsia-200 underline-offset-4" href="#">Terms</a> and
+          <a class="text-fuchsia-200 underline-offset-4" href="#">Privacy Policy</a>.
+          <small class="block text-xs" *ngIf="showError(acceptTermsCtrl)">Please accept the legal terms.</small>
+        </span>
+      </label>
+
+      <button
+        class="w-full rounded-2xl bg-gradient-to-r from-fuchsia-300 via-indigo-400 to-cyan-300 px-4 py-3 text-base font-semibold text-slate-950 shadow-lg shadow-fuchsia-400/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+        type="submit"
+        [disabled]="signupForm.invalid || isSubmitting"
+      >
+        {{ isSubmitting ? 'Creating workspace…' : 'Create workspace' }}
+      </button>
+
+      <p class="text-sm text-rose-300" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="text-sm text-emerald-300" *ngIf="!errorMessage && serverMessage">{{ serverMessage }}</p>
+    </form>
+
+    <footer class="text-sm text-white/70">
+      <p>
+        Already have an account?
+        <a routerLink="/auth/login" class="font-semibold text-fuchsia-200 underline-offset-4 hover:text-white"
+          >Sign in</a
+        >
+      </p>
+    </footer>
+  </div>
+</section>
