@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createTask,
   deleteTask,
+  getTaskAnalytics,
   getTaskById,
   getTasks,
   updateTask,
@@ -13,6 +14,8 @@ const router = Router();
 router.use(verfifyJWT);
 
 router.route("/").post(createTask).get(getTasks);
+
+router.get("/analytics/summary", getTaskAnalytics);
 
 router.route("/:taskId").get(getTaskById).put(updateTask).delete(deleteTask);
 

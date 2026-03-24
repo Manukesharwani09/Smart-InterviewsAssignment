@@ -124,4 +124,67 @@ const deleteTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Task deleted successfully"));
 });
 
-export { createTask, getTasks, getTaskById, updateTask, deleteTask };
+const getTaskAnalytics = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const [totalTasks, completedTasks, statusBreakdown, priorityBreakdown] =
+    await Promise.all([
+      Task.countDocuments({ user: userId }),
+      Task.countDocuments({ user: userId, status: "done" }),
+      Task.aggregate([
+        { $match: { user: userId } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+      Task.aggregate([
+        { $match: { user: userId } },
+        { $group: { _id: "$priority", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+  const pendingTasks = totalTasks - completedTasks;
+  const completionPercentage = totalTasks
+    ? Number(((completedTasks / totalTasks) * 100).toFixed(2))
+    : 0;
+
+  const statusCounts = statusBreakdown.reduce((acc, curr) => {
+    acc[curr._id] = curr.count;
+    return acc;
+  }, {});
+
+  const priorityCounts = priorityBreakdown.reduce((acc, curr) => {
+    acc[curr._id] = curr.count;
+    return acc;
+  }, {});
+
+  return res.status(200).json(
+    new ApiResponse(200, "Task analytics fetched", {
+      totals: {
+        total: totalTasks,
+        completed: completedTasks,
+        pending: pendingTasks,
+        completionPercentage,
+      },
+      breakdown: {
+        status: {
+          todo: statusCounts.todo || 0,
+          "in-progress": statusCounts["in-progress"] || 0,
+          done: statusCounts.done || 0,
+        },
+        priority: {
+          low: priorityCounts.low || 0,
+          medium: priorityCounts.medium || 0,
+          high: priorityCounts.high || 0,
+        },
+      },
+    }),
+  );
+});
+
+export {
+  createTask,
+  getTasks,
+  getTaskById,
+  updateTask,
+  deleteTask,
+  getTaskAnalytics,
+};
