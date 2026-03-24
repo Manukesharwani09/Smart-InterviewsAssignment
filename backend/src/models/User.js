@@ -14,8 +14,8 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true,           // Creates a unique index in MongoDB
-      lowercase: true,        // Always store emails in lowercase
+      unique: true,
+      lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
     },
@@ -24,17 +24,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false,          // Never return password in queries by default
+      select: false,
     },
 
     role: {
       type: String,
       enum: ['user', 'admin'],
-      default: 'user',        // Role-based access ready (optional feature)
+      default: 'user',
     },
   },
   {
-    timestamps: true,         // Auto adds createdAt and updatedAt fields
+    timestamps: true,
   }
 );
 
