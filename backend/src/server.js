@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 dotenv.config();
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/user.route.js";
+import taskRoutes from "./routes/task.route.js";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.static("public"));
 app.use(cookieParser());
 connectDB();
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/tasks", taskRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Task Manager API is running!" });
 });
