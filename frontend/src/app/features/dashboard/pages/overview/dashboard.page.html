@@ -1,92 +1,139 @@
-<section class="space-y-10 text-white">
-  <header
-    class="rounded-[28px] border border-white/10 bg-white/5 px-6 py-8 shadow-[0_35px_90px_rgba(3,5,15,0.55)] sm:px-10"
-  >
-    <p class="text-xs uppercase tracking-[0.4rem] text-cyan-200/70">Ops command</p>
+<section class="space-y-10 text-slate-100">
+  <header class="rounded-[28px] border border-white/10 bg-white/5 px-6 py-8 shadow-[0_30px_70px_rgba(8,15,40,0.45)] sm:px-10">
+    <p class="text-xs uppercase tracking-[0.4rem] text-cyan-200/70">OPS COMMAND</p>
     <div class="mt-4 flex flex-wrap items-start justify-between gap-6">
       <div>
         <h1 class="text-3xl font-semibold leading-tight">Task dashboard</h1>
-        <p class="mt-2 text-white/70">Welcome back! Here’s the pulse on your delivery train.</p>
+        <p class="mt-2 text-white/70">Stay on top of priorities with a single glance.</p>
       </div>
       <button
-        class="rounded-2xl bg-gradient-to-r from-cyan-300 via-indigo-400 to-violet-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-400/30 transition hover:scale-[1.02]"
+        class="rounded-2xl bg-gradient-to-r from-cyan-300 via-indigo-400 to-sky-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-400/30 transition hover:translate-y-0.5"
+        type="button"
       >
         + New task
       </button>
     </div>
   </header>
 
-  <div class="grid gap-6 md:grid-cols-3">
-    <article class="rounded-3xl border border-white/10 bg-white/5 p-6">
-      <p class="text-xs uppercase tracking-[0.3rem] text-white/60">Active initiatives</p>
-      <p class="mt-4 text-4xl font-semibold">12</p>
-      <p class="mt-2 text-sm text-emerald-300">+3 vs last sprint</p>
-    </article>
-    <article class="rounded-3xl border border-white/10 bg-white/5 p-6">
-      <p class="text-xs uppercase tracking-[0.3rem] text-white/60">Overdue tasks</p>
-      <p class="mt-4 text-4xl font-semibold">5</p>
-      <p class="mt-2 text-sm text-rose-300">-2 vs last sprint</p>
-    </article>
-    <article class="rounded-3xl border border-white/10 bg-white/5 p-6">
-      <p class="text-xs uppercase tracking-[0.3rem] text-white/60">Automation coverage</p>
-      <p class="mt-4 text-4xl font-semibold">74%</p>
-      <p class="mt-2 text-sm text-white/70">12 playbooks live</p>
-    </article>
+  <div *ngIf="isLoading; else statsContent" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div *ngFor="let skeleton of [1, 2, 3, 4]" class="rounded-2xl border border-white/5 bg-white/5 p-6">
+      <div class="flex animate-pulse flex-col gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-white/10"></div>
+        <div class="h-3 w-1/2 rounded-full bg-white/10"></div>
+        <div class="h-6 w-2/3 rounded-full bg-white/10"></div>
+        <div class="h-3 w-1/3 rounded-full bg-white/10"></div>
+      </div>
+    </div>
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-[2fr_1fr]">
-    <article class="rounded-[28px] border border-white/10 bg-white/5 p-6 sm:p-8">
-      <header class="flex items-center justify-between gap-4">
-        <div>
-          <h2 class="text-xl font-semibold">This week</h2>
-          <p class="text-sm text-white/60">Top priorities across teams</p>
+  <ng-template #statsContent>
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <article
+        *ngFor="let card of statsCards"
+        class="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_20px_45px_rgba(8,15,40,0.35)]"
+      >
+        <div class="flex items-start justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <span class="rounded-2xl bg-white/10 p-3" [ngClass]="card.accentClass">
+              <svg
+                [attr.viewBox]="card.iconViewBox"
+                class="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              >
+                <path [attr.d]="card.iconPath" />
+              </svg>
+            </span>
+            <div>
+              <p class="text-xs uppercase tracking-[0.3rem] text-white/60">{{ card.label }}</p>
+              <p class="mt-2 text-3xl font-semibold text-white">{{ card.value }}</p>
+            </div>
+          </div>
         </div>
-        <span class="rounded-full border border-white/20 px-3 py-1 text-xs uppercase tracking-wide text-white/70"
-          >7 owners</span
-        >
-      </header>
-      <ul class="mt-6 space-y-4 text-sm">
-        <li class="flex items-start justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <div>
-            <p class="font-semibold">Ship sprint retro insights</p>
-            <span class="text-white/60">Product Ops • Due today</span>
-          </div>
-          <span class="rounded-full border border-emerald-300/40 px-3 py-1 text-xs text-emerald-200">Ready</span>
-        </li>
-        <li class="flex items-start justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <div>
-            <p class="font-semibold">Refresh risk matrix</p>
-            <span class="text-white/60">PMO • Due in 2 days</span>
-          </div>
-          <span class="rounded-full border border-amber-300/40 px-3 py-1 text-xs text-amber-200">Blocked</span>
-        </li>
-        <li class="flex items-start justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <div>
-            <p class="font-semibold">Automate onboarding drip</p>
-            <span class="text-white/60">CX Ops • Due Friday</span>
-          </div>
-          <span class="rounded-full border border-cyan-300/40 px-3 py-1 text-xs text-cyan-200">In progress</span>
-        </li>
-      </ul>
-    </article>
+        <p class="mt-6 text-sm text-white/70">{{ card.change }}</p>
+      </article>
+    </div>
+  </ng-template>
 
-    <article class="rounded-[28px] border border-white/10 bg-white/5 p-6 sm:p-8">
-      <h2 class="text-xl font-semibold">Schedule</h2>
-      <p class="text-sm text-white/60">Anchor points for the week</p>
-      <ol class="mt-6 space-y-4 text-sm">
-        <li class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <p class="font-semibold">Mon · Exec standup</p>
-          <span class="text-white/60">09:00 AM · Strategy wave 5</span>
-        </li>
-        <li class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <p class="font-semibold">Wed · Delivery sync</p>
-          <span class="text-white/60">11:30 AM · Squad leads</span>
-        </li>
-        <li class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <p class="font-semibold">Fri · Demos + wins</p>
-          <span class="text-white/60">03:00 PM · Org-wide</span>
-        </li>
-      </ol>
-    </article>
-  </div>
+  <article class="rounded-[28px] border border-white/10 bg-white/5 p-6 sm:p-8">
+    <header class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-semibold">My Tasks</h2>
+        <p class="text-sm text-white/60">Handpicked priorities across your squads</p>
+      </div>
+      <button
+        class="rounded-2xl border border-cyan-300/40 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/10"
+        type="button"
+      >
+        + Add Task
+      </button>
+    </header>
+
+    <div *ngIf="isLoading; else tasksLoaded" class="mt-6 space-y-4">
+      <div *ngFor="let placeholder of [1, 2, 3]" class="animate-pulse rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div class="h-4 w-1/3 rounded-full bg-white/10"></div>
+        <div class="mt-4 grid gap-3 sm:grid-cols-[2fr_1fr]">
+          <div class="space-y-2">
+            <div class="h-3 w-full rounded-full bg-white/10"></div>
+            <div class="h-3 w-3/4 rounded-full bg-white/10"></div>
+          </div>
+          <div class="flex gap-3">
+            <div class="h-6 flex-1 rounded-full bg-white/10"></div>
+            <div class="h-6 flex-1 rounded-full bg-white/10"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #tasksLoaded>
+      <div *ngIf="hasTasks; else emptyState" class="mt-6 space-y-4">
+        <article
+          *ngFor="let task of tasks"
+          class="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_20px_40px_rgba(8,15,40,0.35)] transition hover:border-white/20"
+        >
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-white">{{ task.title }}</h3>
+              <p class="mt-2 text-sm text-white/70">{{ task.description }}</p>
+              <p class="mt-4 text-xs uppercase tracking-wide text-white/60">{{ task.due }}</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <span [ngClass]="statusBadgeClasses(task.status)">{{ task.status }}</span>
+              <span [ngClass]="priorityBadgeClasses(task.priority)">{{ task.priority }} priority</span>
+              <div class="flex gap-2">
+                <button
+                  class="rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-blue-400/50 hover:text-blue-200"
+                  type="button"
+                >
+                  Edit
+                </button>
+                <button
+                  class="rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-rose-400/60 hover:text-rose-200"
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </ng-template>
+
+    <ng-template #emptyState>
+      <div class="mt-12 flex flex-col items-center gap-4 rounded-3xl border border-dashed border-white/20 bg-white/5 px-6 py-12 text-center">
+        <p class="text-lg font-semibold text-white">No tasks yet</p>
+        <p class="max-w-sm text-sm text-white/60">Start by capturing a work item and we will keep everything organized for you.</p>
+        <button
+          class="rounded-2xl bg-blue-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-400"
+          type="button"
+        >
+          Create your first task
+        </button>
+      </div>
+    </ng-template>
+  </article>
 </section>
