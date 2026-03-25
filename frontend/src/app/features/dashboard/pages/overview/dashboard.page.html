@@ -68,6 +68,88 @@
       </div>
     </header>
 
+    <div class="mt-6 grid gap-4 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]">
+      <div class="flex flex-col gap-2">
+        <span class="text-xs uppercase tracking-[0.2rem] text-white/50">Search</span>
+        <input
+          type="text"
+          class="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 focus:border-cyan-300 focus:outline-none"
+          placeholder="Search tasks..."
+          [value]="searchInputValue"
+          (input)="handleSearchInput($any($event.target).value)"
+        />
+      </div>
+        <div class="flex flex-col gap-2">
+          <span class="text-xs uppercase tracking-[0.2rem] text-white/50">Status</span>
+          <div class="relative mt-2">
+            <button
+              type="button"
+              class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white transition focus-visible:border-cyan-300 focus-visible:outline-none"
+              [attr.aria-expanded]="statusMenuOpen"
+              aria-haspopup="listbox"
+              (click)="toggleStatusMenu()"
+            >
+              <span>{{ statusLabel }}</span>
+              <svg class="h-4 w-4 text-white/70" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4" /></svg>
+            </button>
+            <ul *ngIf="statusMenuOpen" class="absolute left-0 right-0 z-20 mt-2 max-h-48 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-1 text-sm shadow-2xl" role="listbox">
+              <li *ngFor="let option of statusOptions">
+                <button type="button" class="flex w-full items-center justify-between rounded-[14px] px-3 py-2 text-left text-white/80 transition hover:bg-white/10" (click)="selectStatus(option.value)">
+                  <span>{{ option.label }}</span>
+                  <span *ngIf="statusFilter === option.value" class="h-2 w-2 rounded-full bg-cyan-300"></span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <span class="text-xs uppercase tracking-[0.2rem] text-white/50">Priority</span>
+          <div class="relative mt-2">
+            <button
+              type="button"
+              class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white transition focus-visible:border-cyan-300 focus-visible:outline-none"
+              [attr.aria-expanded]="priorityMenuOpen"
+              aria-haspopup="listbox"
+              (click)="togglePriorityMenu()"
+            >
+              <span>{{ priorityLabel }}</span>
+              <svg class="h-4 w-4 text-white/70" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4" /></svg>
+            </button>
+            <ul *ngIf="priorityMenuOpen" class="absolute left-0 right-0 z-20 mt-2 max-h-48 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-1 text-sm shadow-2xl" role="listbox">
+              <li *ngFor="let option of priorityOptions">
+                <button type="button" class="flex w-full items-center justify-between rounded-[14px] px-3 py-2 text-left text-white/80 transition hover:bg-white/10" (click)="selectPriority(option.value)">
+                  <span>{{ option.label }}</span>
+                  <span *ngIf="priorityFilter === option.value" class="h-2 w-2 rounded-full bg-cyan-300"></span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <span class="text-xs uppercase tracking-[0.2rem] text-white/50">Sort</span>
+          <div class="relative mt-2">
+            <button
+              type="button"
+              class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white transition focus-visible:border-cyan-300 focus-visible:outline-none"
+              [attr.aria-expanded]="sortMenuOpen"
+              aria-haspopup="listbox"
+              (click)="toggleSortMenu()"
+            >
+              <span>{{ sortLabel }}</span>
+              <svg class="h-4 w-4 text-white/70" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4" /></svg>
+            </button>
+            <ul *ngIf="sortMenuOpen" class="absolute left-0 right-0 z-20 mt-2 max-h-48 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-1 text-sm shadow-2xl" role="listbox">
+              <li *ngFor="let option of sortOptions">
+                <button type="button" class="flex w-full items-center justify-between rounded-[14px] px-3 py-2 text-left text-white/80 transition hover:bg-white/10" (click)="selectSort(option.value)">
+                  <span>{{ option.label }}</span>
+                  <span *ngIf="sortBy === option.value" class="h-2 w-2 rounded-full bg-cyan-300"></span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+    </div>
+
     <div *ngIf="isLoading; else tasksLoaded" class="mt-6 space-y-4">
       @for (placeholder of [1, 2, 3]; track placeholder) {
         <div class="animate-pulse rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -122,6 +204,28 @@
               </div>
             </article>
           }
+
+          <div class="mt-8 flex flex-col items-center gap-4 text-sm text-white/70 sm:flex-row sm:justify-between">
+            <p>Page {{ page }} of {{ totalPages }}</p>
+            <div class="flex gap-3">
+              <button
+                type="button"
+                class="rounded-2xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                [disabled]="page === 1"
+                (click)="goToPreviousPage()"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                class="rounded-2xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                [disabled]="page >= totalPages"
+                (click)="goToNextPage()"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </ng-container>
     </ng-template>

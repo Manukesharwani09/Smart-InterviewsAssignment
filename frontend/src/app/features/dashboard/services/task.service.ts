@@ -1,16 +1,35 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../../auth/models/auth.types';
 import { CreateTaskPayload, TaskResponse, TasksResponse } from '../models/task.types';
+
+export interface TaskQueryParams {
+  status?: string;
+  priority?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = '/api/v1/tasks';
 
-  getTasks(): Observable<TasksResponse> {
+  getTasks(params: TaskQueryParams = {}): Observable<TasksResponse> {
+    let httpParams = new HttpParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        httpParams = httpParams.set(key, String(value));
+      }
+    });
+
     return this.http.get<TasksResponse>(this.baseUrl, {
+      params: httpParams,
       withCredentials: true,
     });
   }

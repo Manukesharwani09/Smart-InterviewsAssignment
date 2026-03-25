@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize, firstValueFrom } from 'rxjs';
+import { Subject, Subscription, debounceTime, distinctUntilChanged, finalize, firstValueFrom } from 'rxjs';
 import { TaskFormComponent } from '../../components/task-form/task-form.component';
 import { CreateTaskPayload, Task, TaskPriority, TaskStatus } from '../../models/task.types';
 import { TaskOperationsService } from '../../services/task-operations.service';
-import { TaskService } from '../../services/task.service';
+import { TaskQueryParams, TaskService } from '../../services/task.service';
 
 interface StatCard {
   label: string;
@@ -22,6 +22,82 @@ interface StatCard {
   templateUrl: './dashboard.page.html',
 })
 export class DashboardPage implements OnInit {
+    // Custom dropdown state and options for filters/sort
+    statusMenuOpen = false;
+    priorityMenuOpen = false;
+    sortMenuOpen = false;
+
+    statusOptions = [
+      { value: 'all', label: 'All' },
+      { value: 'todo', label: 'Todo' },
+      { value: 'in-progress', label: 'In Progress' },
+      { value: 'done', label: 'Done' },
+    ];
+    priorityOptions = [
+      { value: 'all', label: 'All' },
+      { value: 'low', label: 'Low' },
+      { value: 'medium', label: 'Medium' },
+      { value: 'high', label: 'High' },
+    ];
+    sortOptions = [
+      { value: 'dueDate', label: 'Due Date' },
+      { value: 'priority', label: 'Priority' },
+    ];
+
+    get statusLabel(): string {
+      return this.statusOptions.find(opt => opt.value === this.statusFilter)?.label || 'All';
+    }
+    get priorityLabel(): string {
+      return this.priorityOptions.find(opt => opt.value === this.priorityFilter)?.label || 'All';
+    }
+    get sortLabel(): string {
+      return this.sortOptions.find(opt => opt.value === this.sortBy)?.label || 'Due Date';
+    }
+
+    toggleStatusMenu(): void {
+      this.statusMenuOpen = !this.statusMenuOpen;
+      if (this.statusMenuOpen) {
+        this.priorityMenuOpen = false;
+        this.sortMenuOpen = false;
+      }
+    }
+    togglePriorityMenu(): void {
+      this.priorityMenuOpen = !this.priorityMenuOpen;
+      if (this.priorityMenuOpen) {
+        this.statusMenuOpen = false;
+        this.sortMenuOpen = false;
+      }
+    }
+    toggleSortMenu(): void {
+      this.sortMenuOpen = !this.sortMenuOpen;
+      if (this.sortMenuOpen) {
+        this.statusMenuOpen = false;
+        this.priorityMenuOpen = false;
+      }
+    }
+
+    selectStatus(value: string): void {
+      this.statusFilter = value as TaskStatus | 'all';
+      this.statusMenuOpen = false;
+      this.page = 1;
+      this.loadTasks();
+    }
+    selectPriority(value: string): void {
+      this.priorityFilter = value as TaskPriority | 'all';
+      this.priorityMenuOpen = false;
+      this.page = 1;
+      this.loadTasks();
+    }
+    selectSort(value: string): void {
+      if (value !== 'priority' && value !== 'dueDate') {
+        return;
+      }
+      this.sortBy = value;
+      this.sortOrder = value === 'priority' ? 'desc' : 'asc';
+      this.sortMenuOpen = false;
+      this.page = 1;
+      this.loadTasks();
+    }
   private readonly taskService = inject(TaskService);
   private readonly taskOperations = inject(TaskOperationsService);
   private readonly destroyRef = inject(DestroyRef);
@@ -38,6 +114,18 @@ export class DashboardPage implements OnInit {
   editError = '';
   taskBeingEdited: Task | null = null;
   deletingTaskId: string | null = null;
+  searchInputValue = '';
+  searchTerm = '';
+  statusFilter: 'all' | TaskStatus = 'all';
+  priorityFilter: 'all' | TaskPriority = 'all';
+  sortBy: 'dueDate' | 'priority' = 'dueDate';
+  sortOrder: 'asc' | 'desc' = 'asc';
+  page = 1;
+  limit = 10;
+  totalPages = 1;
+  totalTasks = 0;
+  private readonly searchTermChanges$ = new Subject<string>();
+  private tasksSubscription?: Subscription;
 
   readonly statsCards: StatCard[] = [
     {
@@ -75,15 +163,26 @@ export class DashboardPage implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.searchTermChanges$
+      .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((term) => {
+        this.searchTerm = term.trim();
+        this.page = 1;
+        this.loadTasks();
+      });
+
     this.loadTasks();
   }
 
   loadTasks(): void {
+    this.tasksSubscription?.unsubscribe();
     this.isLoading = true;
     this.loadError = false;
 
-    this.taskService
-      .getTasks()
+    const queryParams = this.buildQueryParams();
+
+    this.tasksSubscription = this.taskService
+      .getTasks(queryParams)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
@@ -92,7 +191,15 @@ export class DashboardPage implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          this.tasks = response.data?.tasks ?? [];
+          const payload = response.data;
+          this.tasks = payload?.tasks ?? [];
+          const meta = (payload?.meta ?? {}) as { total?: number; page?: number; totalPages?: number };
+          const derivedTotalPages = Number(meta?.totalPages ?? 1);
+          this.totalPages = Number.isFinite(derivedTotalPages) && derivedTotalPages > 0 ? derivedTotalPages : 1;
+          const nextPage = Number(meta?.page ?? this.page);
+          this.page = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1;
+          const total = Number(meta?.total ?? this.tasks.length);
+          this.totalTasks = Number.isFinite(total) && total >= 0 ? total : this.tasks.length;
           this.loadError = false;
         },
         error: (error) => {
@@ -100,6 +207,49 @@ export class DashboardPage implements OnInit {
           console.error('Failed to load tasks', error);
         },
       });
+  }
+
+  handleSearchInput(value: string): void {
+    this.searchInputValue = value;
+    this.searchTermChanges$.next(value);
+  }
+
+  handleStatusFilterChange(value: string): void {
+    this.statusFilter = value as TaskStatus | 'all';
+    this.page = 1;
+    this.loadTasks();
+  }
+
+  handlePriorityFilterChange(value: string): void {
+    this.priorityFilter = value as TaskPriority | 'all';
+    this.page = 1;
+    this.loadTasks();
+  }
+
+  handleSortChange(value: string): void {
+    if (value !== 'priority' && value !== 'dueDate') {
+      return;
+    }
+    this.sortBy = value;
+    this.sortOrder = value === 'priority' ? 'desc' : 'asc';
+    this.page = 1;
+    this.loadTasks();
+  }
+
+  goToPreviousPage(): void {
+    if (this.page === 1) {
+      return;
+    }
+    this.page -= 1;
+    this.loadTasks();
+  }
+
+  goToNextPage(): void {
+    if (this.page >= this.totalPages) {
+      return;
+    }
+    this.page += 1;
+    this.loadTasks();
   }
 
   openCreateModal(): void {
@@ -131,7 +281,10 @@ export class DashboardPage implements OnInit {
       const createdTask = await firstValueFrom(
         this.taskOperations.createTask(payload).pipe(takeUntilDestroyed(this.destroyRef))
       );
-      this.tasks = [createdTask, ...this.tasks];
+      if (this.page === 1) {
+        this.tasks = [createdTask, ...this.tasks].slice(0, this.limit);
+      }
+      this.totalTasks += 1;
       createdSuccessfully = true;
     } catch (error) {
       this.createError = this.extractErrorMessage(error, 'Failed to create task. Please try again.');
@@ -139,6 +292,8 @@ export class DashboardPage implements OnInit {
       if (createdSuccessfully) {
         this.closeCreateModal();
         this.cdr.detectChanges();
+        this.page = 1;
+        this.loadTasks();
       }
       this.isSubmittingTask = false;
     }
@@ -202,12 +357,21 @@ export class DashboardPage implements OnInit {
     try {
       await firstValueFrom(this.taskService.deleteTask(taskId).pipe(takeUntilDestroyed(this.destroyRef)));
       this.tasks = this.tasks.filter((task) => task._id !== taskId);
+      this.totalTasks = Math.max(0, this.totalTasks - 1);
+      const estimatedPages = Math.max(1, Math.ceil(this.totalTasks / this.limit));
+      this.totalPages = estimatedPages;
     } catch (error) {
       console.error('Failed to delete task', error);
       window.alert('Failed to delete task');
     } finally {
       this.deletingTaskId = null;
       this.cdr.detectChanges();
+      if (!this.tasks.length && this.page > 1) {
+        this.page -= 1;
+        this.loadTasks();
+      } else if (this.tasks.length < this.limit && this.totalTasks >= (this.page - 1) * this.limit) {
+        this.loadTasks();
+      }
     }
   }
 
@@ -237,6 +401,29 @@ export class DashboardPage implements OnInit {
       low: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
     };
     return `${base} ${palette[priority]}`;
+  }
+
+  private buildQueryParams(): TaskQueryParams {
+    const params: TaskQueryParams = {
+      page: this.page,
+      limit: this.limit,
+      sortBy: this.sortBy,
+      sortOrder: this.sortOrder,
+    };
+
+    if (this.statusFilter !== 'all') {
+      params.status = this.statusFilter;
+    }
+
+    if (this.priorityFilter !== 'all') {
+      params.priority = this.priorityFilter;
+    }
+
+    if (this.searchTerm) {
+      params.search = this.searchTerm;
+    }
+
+    return params;
   }
 
   private extractErrorMessage(error: unknown, fallback: string): string {
