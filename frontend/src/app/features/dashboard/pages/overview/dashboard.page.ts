@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-
-type TaskStatus = 'Todo' | 'In Progress' | 'Done';
-type TaskPriority = 'Low' | 'Medium' | 'High';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
+import { Task, TaskPriority, TaskStatus } from '../../models/task.types';
+import { TaskService } from '../../services/task.service';
 
 interface StatCard {
   label: string;
@@ -13,22 +14,19 @@ interface StatCard {
   accentClass: string;
 }
 
-interface TaskItem {
-  title: string;
-  description: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  due: string;
-}
-
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './dashboard.page.html',
 })
-export class DashboardPage {
-  readonly isLoading = false;
+export class DashboardPage implements OnInit {
+  private readonly taskService = inject(TaskService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  isLoading = false;
+  loadError = false;
+  tasks: Task[] = [];
 
   readonly statsCards: StatCard[] = [
     {
@@ -65,29 +63,37 @@ export class DashboardPage {
     },
   ];
 
-  readonly tasks: TaskItem[] = [
-    {
-      title: 'Finalize sprint retro',
-      description: 'Collect feedback from product and engineering teams before Friday.',
-      status: 'In Progress',
-      priority: 'High',
-      due: 'Due in 2 days',
-    },
-    {
-      title: 'QA regression pass',
-      description: 'Verify core workflows in staging ahead of release.',
-      status: 'Todo',
-      priority: 'Medium',
-      due: 'Due next Monday',
-    },
-    {
-      title: 'Customer onboarding deck',
-      description: 'Refresh slides with latest automation metrics.',
-      status: 'Done',
-      priority: 'Low',
-      due: 'Completed yesterday',
-    },
-  ];
+  ngOnInit(): void {
+    this.loadTasks();
+  }
+
+  loadTasks(): void {
+    this.isLoading = true;
+    this.loadError = false;
+
+    this.taskService
+      .getTasks()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.tasks = response.data?.tasks ?? [];
+          this.loadError = false;
+        },
+        error: (error) => {
+          this.loadError = true;
+          console.error('Failed to load tasks', error);
+        },
+      });
+  }
+
+  retryLoad(): void {
+    this.loadTasks();
+  }
 
   get hasTasks(): boolean {
     return this.tasks.length > 0;
@@ -96,9 +102,9 @@ export class DashboardPage {
   statusBadgeClasses(status: TaskStatus): string {
     const base = 'rounded-full border px-3 py-1 text-xs font-medium tracking-wide';
     const palette: Record<TaskStatus, string> = {
-      Todo: 'border-blue-500/40 bg-blue-500/10 text-blue-200',
-      'In Progress': 'border-amber-400/40 bg-amber-500/10 text-amber-100',
-      Done: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      todo: 'border-blue-500/40 bg-blue-500/10 text-blue-200',
+      'in-progress': 'border-amber-400/40 bg-amber-500/10 text-amber-100',
+      done: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
     };
     return `${base} ${palette[status]}`;
   }
@@ -106,9 +112,9 @@ export class DashboardPage {
   priorityBadgeClasses(priority: TaskPriority): string {
     const base = 'rounded-full border px-3 py-1 text-xs font-medium tracking-wide';
     const palette: Record<TaskPriority, string> = {
-      High: 'border-rose-400/50 bg-rose-500/10 text-rose-100',
-      Medium: 'border-amber-400/40 bg-amber-500/10 text-amber-100',
-      Low: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      high: 'border-rose-400/50 bg-rose-500/10 text-rose-100',
+      medium: 'border-amber-400/40 bg-amber-500/10 text-amber-100',
+      low: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
     };
     return `${base} ${palette[priority]}`;
   }
