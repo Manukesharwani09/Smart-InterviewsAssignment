@@ -1,0 +1,20 @@
+<section class="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-4 sm:p-6">
+  <div class="grid gap-3 text-sm text-white/80 sm:grid-cols-2 lg:grid-cols-4">
+    <article class="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p class="text-xs uppercase tracking-[0.2rem] text-white/50">Total</p>
+      <p class="mt-2 text-2xl font-semibold text-white">{{ summary.total }}</p>
+    </article>
+    <article class="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p class="text-xs uppercase tracking-[0.2rem] text-white/50">Low</p>
+      <p class="mt-2 text-2xl font-semibold text-emerald-300">{{ summary.low }}</p>
+    </article>
+    <article class="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p class="text-xs uppercase tracking-[0.2rem] text-white/50">Medium</p>
+      <p class="mt-2 text-2xl font-semibold text-amber-300">{{ summary.medium }}</p>
+    </article>
+    <article class="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p class="text-xs uppercase tracking-[0.2rem] text-white/50">High</p>
+      <p class="mt-2 text-2xl font-semibold text-rose-300">{{ summary.high }}</p>
+    </article>
+  </div>
+</section>

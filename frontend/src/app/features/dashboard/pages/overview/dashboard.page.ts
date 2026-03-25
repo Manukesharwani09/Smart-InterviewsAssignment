@@ -3,6 +3,7 @@ import { Component, DestroyRef, OnInit, inject, ChangeDetectorRef } from '@angul
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, distinctUntilChanged, finalize, firstValueFrom, of, retry, switchMap, tap, timeout } from 'rxjs';
 import { TaskFormComponent } from '../../components/task-form/task-form.component';
+import { TaskSummaryComponent } from '../../components/task-summary/task-summary.component';
 import { CreateTaskPayload, Task, TaskPriority, TaskStatus } from '../../models/task.types';
 import { TaskOperationsService } from '../../services/task-operations.service';
 import { TaskAnalyticsSummary, TaskQueryParams, TaskService } from '../../services/task.service';
@@ -10,7 +11,6 @@ import { TaskAnalyticsSummary, TaskQueryParams, TaskService } from '../../servic
 interface StatCard {
   label: string;
   value: string;
-  change: string;
   iconPath: string;
   iconViewBox: string;
   accentClass: string;
@@ -25,7 +25,7 @@ type AnalyticsTotals = {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, TaskFormComponent],
+  imports: [CommonModule, TaskFormComponent, TaskSummaryComponent],
   templateUrl: './dashboard.page.html',
 })
 export class DashboardPage implements OnInit {
@@ -164,7 +164,6 @@ export class DashboardPage implements OnInit {
     {
       label: 'Total Tasks',
       value: '--',
-      change: '+4 vs last week',
       iconViewBox: '0 0 24 24',
       iconPath: 'M4 6h16M4 12h16M4 18h10',
       accentClass: 'text-blue-300',
@@ -172,7 +171,6 @@ export class DashboardPage implements OnInit {
     {
       label: 'Completed Tasks',
       value: '--',
-      change: '57% completion rate',
       iconViewBox: '0 0 24 24',
       iconPath: 'm5 12 4 4 10-10',
       accentClass: 'text-emerald-300',
@@ -180,7 +178,6 @@ export class DashboardPage implements OnInit {
     {
       label: 'Pending Tasks',
       value: '--',
-      change: 'Next up in backlog',
       iconViewBox: '0 0 24 24',
       iconPath: 'M12 6v6h4m4 0a8 8 0 1 1-16 0 8 8 0 0 1 16 0z',
       accentClass: 'text-amber-300',
@@ -188,7 +185,6 @@ export class DashboardPage implements OnInit {
     {
       label: 'Completion %',
       value: '--',
-      change: '+6% vs prior sprint',
       iconViewBox: '0 0 24 24',
       iconPath: 'M12 6v6l4 2m4-2a8 8 0 1 1-16 0 8 8 0 0 1 16 0z',
       accentClass: 'text-indigo-300',

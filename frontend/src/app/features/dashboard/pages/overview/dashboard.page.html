@@ -54,7 +54,6 @@
               </div>
             </div>
           </div>
-          <p class="mt-6 text-sm text-white/70">{{ card.change }}</p>
         </article>
       }
     </div>
@@ -149,6 +148,8 @@
           </div>
         </div>
     </div>
+
+    <app-task-summary [tasks]="tasks"></app-task-summary>
 
     <div *ngIf="isLoading; else tasksLoaded" class="mt-6 space-y-4">
       @for (placeholder of [1, 2, 3]; track placeholder) {
