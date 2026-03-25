@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { ApiResponse } from '../../auth/models/auth.types';
 import { CreateTaskPayload, TaskResponse, TasksResponse } from '../models/task.types';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +23,12 @@ export class TaskService {
 
   updateTask(taskId: string, payload: CreateTaskPayload): Observable<TaskResponse> {
     return this.http.put<TaskResponse>(`${this.baseUrl}/${taskId}`, payload, {
+      withCredentials: true,
+    });
+  }
+
+  deleteTask(taskId: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.baseUrl}/${taskId}`, {
       withCredentials: true,
     });
   }

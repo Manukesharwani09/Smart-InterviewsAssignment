@@ -37,6 +37,7 @@ export class DashboardPage implements OnInit {
   createError = '';
   editError = '';
   taskBeingEdited: Task | null = null;
+  deletingTaskId: string | null = null;
 
   readonly statsCards: StatCard[] = [
     {
@@ -187,6 +188,26 @@ export class DashboardPage implements OnInit {
         this.cdr.detectChanges();
       }
       this.isUpdatingTask = false;
+    }
+  }
+
+  async handleDeleteTask(taskId: string): Promise<void> {
+    const confirmed = window.confirm('Are you sure you want to delete this task?');
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingTaskId = taskId;
+
+    try {
+      await firstValueFrom(this.taskService.deleteTask(taskId).pipe(takeUntilDestroyed(this.destroyRef)));
+      this.tasks = this.tasks.filter((task) => task._id !== taskId);
+    } catch (error) {
+      console.error('Failed to delete task', error);
+      window.alert('Failed to delete task');
+    } finally {
+      this.deletingTaskId = null;
+      this.cdr.detectChanges();
     }
   }
 
