@@ -11,7 +11,6 @@ import { AuthApiService } from '../../services/auth.api';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.page.html',
-  styleUrl: './login.page.scss'
 })
 export class LoginPage {
   protected readonly title = 'Sign in to TaskTrackr';

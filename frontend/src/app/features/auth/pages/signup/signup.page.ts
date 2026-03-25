@@ -17,7 +17,6 @@ import { AuthApiService } from '../../services/auth.api';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './signup.page.html',
-  styleUrl: './signup.page.scss'
 })
 export class SignupPage {
   protected readonly title = 'Create your TaskTrackr account';
