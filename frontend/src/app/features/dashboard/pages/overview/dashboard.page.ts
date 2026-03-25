@@ -42,9 +42,9 @@ export class DashboardPage implements OnInit {
     ];
     priorityOptions = [
       { value: 'all', label: 'All' },
-      { value: 'low', label: 'Low' },
-      { value: 'medium', label: 'Medium' },
       { value: 'high', label: 'High' },
+      { value: 'medium', label: 'Medium' },
+      { value: 'low', label: 'Low' },
     ];
     sortOptions = [
       { value: 'dueDate', label: 'Due Date' },
@@ -239,6 +239,32 @@ export class DashboardPage implements OnInit {
 
         const payload = response.data;
         this.tasks = payload.tasks ?? [];
+        // If sorting by priority, enforce high > medium > low order
+        if (this.sortBy === 'priority') {
+          const priorityOrder: Record<string, number> = { high: 1, medium: 2, low: 3 };
+          this.tasks = this.tasks.slice().sort((a, b) => {
+            return (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99);
+          });
+        } else if (this.sortBy === 'dueDate') {
+          // Sort by due date: nearest due date first, tasks without due date at the end
+          this.tasks = this.tasks.slice().sort((a, b) => {
+            const aHasDue = typeof a.dueDate === 'string' && a.dueDate.length > 0;
+            const bHasDue = typeof b.dueDate === 'string' && b.dueDate.length > 0;
+            if (aHasDue && bHasDue) {
+              // Both have due dates, sort by soonest
+              return new Date(a.dueDate as string).getTime() - new Date(b.dueDate as string).getTime();
+            } else if (aHasDue) {
+              // a has due date, b does not
+              return -1;
+            } else if (bHasDue) {
+              // b has due date, a does not
+              return 1;
+            } else {
+              // Neither has due date
+              return 0;
+            }
+          });
+        }
         const meta = (payload.meta ?? {}) as { total?: number; page?: number; totalPages?: number };
         const derivedTotalPages = Number(meta?.totalPages ?? 1);
         this.totalPages = Number.isFinite(derivedTotalPages) && derivedTotalPages > 0 ? derivedTotalPages : 1;
