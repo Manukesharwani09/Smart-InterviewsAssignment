@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthApiService } from '../../services/auth.api';
@@ -18,6 +18,7 @@ export class LoginPage {
   protected readonly subtitle = 'Step back into your flow and keep priorities moving forward.';
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
+  private readonly router = inject(Router);
   private readonly session = inject(AuthSessionService);
   protected readonly loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -55,6 +56,7 @@ export class LoginPage {
             this.session.setSession(response.data, { remember });
           }
           this.serverMessage = response.message ?? 'Authenticated! Redirecting to your workspace...';
+          this.router.navigate(['/dashboard']);
         },
         error: (error: HttpErrorResponse) => {
           this.errorMessage = error.error?.message ?? 'Unable to sign in. Please verify your credentials.';

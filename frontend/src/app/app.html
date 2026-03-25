@@ -1,7 +1,33 @@
 <main
-  class="min-h-screen w-full bg-[radial-gradient(120%_140%_at_0%_0%,#0d1224_0%,#060913_45%,#03060c_100%)] px-4 py-8 text-slate-50 font-['Space_Grotesk','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] sm:px-6 lg:px-10"
+  class="min-h-screen w-full bg-[radial-gradient(120%_140%_at_0%_0%,#0d1224_0%,#060913_45%,#03060c_100%)] px-4 py-6 text-slate-50 font-['Space_Grotesk','Segoe_UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif] sm:px-6 lg:px-10"
 >
-  <div class="mx-auto w-full">
+  <header class="flex w-full flex-wrap items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/5 px-6 py-4 backdrop-blur-xl">
+    <a routerLink="/" class="text-xl font-semibold tracking-tight text-white">TaskTrackr</a>
+    <nav class="flex flex-wrap items-center gap-3 text-sm">
+      <ng-container *ngIf="user$ | async as user; else guestNav">
+        <span class="text-white/70">Hi, {{ user.name }}</span>
+        <a routerLink="/dashboard" class="rounded-full border border-white/20 px-4 py-2 text-white transition hover:bg-white/10">Dashboard</a>
+        <button
+          type="button"
+          class="rounded-full bg-white px-4 py-2 text-slate-900 transition hover:opacity-90 disabled:opacity-60"
+          (click)="logout()"
+          [disabled]="loggingOut"
+        >
+          {{ loggingOut ? 'Signing out…' : 'Sign out' }}
+        </button>
+      </ng-container>
+      <ng-template #guestNav>
+        <a routerLink="/auth/login" class="rounded-full border border-white/20 px-4 py-2 text-white transition hover:bg-white/10">
+          Log in
+        </a>
+        <a routerLink="/auth/signup" class="rounded-full bg-white px-4 py-2 text-slate-900 transition hover:opacity-90">
+          Create account
+        </a>
+      </ng-template>
+    </nav>
+  </header>
+
+  <div class="mt-8 w-full">
     <router-outlet></router-outlet>
   </div>
 </main>

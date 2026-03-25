@@ -7,7 +7,7 @@ import {
   Validators
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthApiService } from '../../services/auth.api';
@@ -24,6 +24,7 @@ export class SignupPage {
   protected readonly subtitle = 'Design a calmer workflow with automations that keep everything in sync.';
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
+  private readonly router = inject(Router);
   private readonly session = inject(AuthSessionService);
   protected showPassword = false;
   protected showConfirmPassword = false;
@@ -89,6 +90,7 @@ export class SignupPage {
           this.serverMessage =
             response.message ?? 'Account created! Check your inbox to verify your email.';
           this.signupForm.patchValue({ password: '', confirmPassword: '' });
+          this.router.navigate(['/dashboard']);
         },
         error: (error: HttpErrorResponse) => {
           this.errorMessage = error.error?.message ?? 'Unable to create your account right now.';
