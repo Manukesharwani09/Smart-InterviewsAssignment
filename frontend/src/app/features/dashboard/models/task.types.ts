@@ -20,3 +20,12 @@ export interface TasksPayload {
 }
 
 export type TasksResponse = ApiResponse<TasksPayload>;
+export type TaskResponse = ApiResponse<Task>;
+
+export interface CreateTaskPayload {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  dueDate?: string;
+}

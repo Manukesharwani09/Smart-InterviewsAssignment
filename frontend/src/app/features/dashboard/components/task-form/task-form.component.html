@@ -1,0 +1,146 @@
+<form class="space-y-5" [formGroup]="taskForm" (ngSubmit)="handleSubmit()">
+  <div>
+    <label class="text-sm font-semibold text-white" for="taskTitle">Title</label>
+    <input
+      id="taskTitle"
+      type="text"
+      formControlName="title"
+      class="mt-2 w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-cyan-300 focus:outline-none"
+      placeholder="e.g. Prepare sprint retro deck"
+    />
+    <p *ngIf="titleControl.invalid && (titleControl.dirty || titleControl.touched)" class="mt-1 text-xs text-rose-300">
+      Title must be at least 3 characters.
+    </p>
+  </div>
+
+  <div>
+    <label class="text-sm font-semibold text-white" for="taskDescription">Description <span class="text-white/40">(optional)</span></label>
+    <textarea
+      id="taskDescription"
+      rows="3"
+      formControlName="description"
+      class="mt-2 w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-cyan-300 focus:outline-none"
+      placeholder="Add helpful context for the team"
+    ></textarea>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label class="text-sm font-semibold text-white" for="taskStatus">Status</label>
+      <div class="relative mt-2">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white transition focus-visible:border-cyan-300 focus-visible:outline-none"
+          [attr.aria-expanded]="statusMenuOpen"
+          aria-haspopup="listbox"
+          (click)="toggleStatusMenu()"
+        >
+          <span>{{ statusLabel }}</span>
+          <svg
+            class="h-4 w-4 text-white/70"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M6 8l4 4 4-4" />
+          </svg>
+        </button>
+        <ul
+          *ngIf="statusMenuOpen"
+          class="absolute left-0 right-0 z-20 mt-2 max-h-48 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-1 text-sm shadow-2xl"
+          role="listbox"
+        >
+          @for (option of statusOptions; track option.value) {
+            <li>
+              <button
+                type="button"
+                class="flex w-full items-center justify-between rounded-[14px] px-3 py-2 text-left text-white/80 transition hover:bg-white/10"
+                (click)="selectStatus(option.value)"
+              >
+                <span>{{ option.label }}</span>
+                <span *ngIf="taskForm.controls.status.value === option.value" class="h-2 w-2 rounded-full bg-cyan-300"></span>
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+    <div>
+      <label class="text-sm font-semibold text-white" for="taskPriority">Priority</label>
+      <div class="relative mt-2">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white transition focus-visible:border-cyan-300 focus-visible:outline-none"
+          [attr.aria-expanded]="priorityMenuOpen"
+          aria-haspopup="listbox"
+          (click)="togglePriorityMenu()"
+        >
+          <span>{{ priorityLabel }}</span>
+          <svg
+            class="h-4 w-4 text-white/70"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M6 8l4 4 4-4" />
+          </svg>
+        </button>
+        <ul
+          *ngIf="priorityMenuOpen"
+          class="absolute left-0 right-0 z-20 mt-2 max-h-48 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-1 text-sm shadow-2xl"
+          role="listbox"
+        >
+          @for (option of priorityOptions; track option.value) {
+            <li>
+              <button
+                type="button"
+                class="flex w-full items-center justify-between rounded-[14px] px-3 py-2 text-left text-white/80 transition hover:bg-white/10"
+                (click)="selectPriority(option.value)"
+              >
+                <span>{{ option.label }}</span>
+                <span *ngIf="taskForm.controls.priority.value === option.value" class="h-2 w-2 rounded-full bg-cyan-300"></span>
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <label class="text-sm font-semibold text-white" for="taskDueDate">Due date <span class="text-white/40">(optional)</span></label>
+    <input
+      id="taskDueDate"
+      type="date"
+      formControlName="dueDate"
+      class="mt-2 w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white focus:border-cyan-300 focus:outline-none"
+    />
+  </div>
+
+  <p *ngIf="errorMessage" class="text-sm text-rose-300">{{ errorMessage }}</p>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <button
+      type="button"
+      class="rounded-2xl border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+      (click)="handleCancel()"
+      [disabled]="isSubmitting"
+    >
+      Cancel
+    </button>
+    <button
+      type="submit"
+      class="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-300 via-indigo-400 to-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-400/30 transition disabled:opacity-60"
+      [disabled]="taskForm.invalid || isSubmitting"
+    >
+      <span *ngIf="isSubmitting" class="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-b-transparent"></span>
+      {{ submitLabel }}
+    </button>
+  </div>
+</form>

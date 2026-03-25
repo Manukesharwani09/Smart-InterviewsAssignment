@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
-import { Task, TaskPriority, TaskStatus } from '../../models/task.types';
+import { finalize, firstValueFrom } from 'rxjs';
+import { TaskFormComponent } from '../../components/task-form/task-form.component';
+import { CreateTaskPayload, Task, TaskPriority, TaskStatus } from '../../models/task.types';
+import { TaskOperationsService } from '../../services/task-operations.service';
 import { TaskService } from '../../services/task.service';
 
 interface StatCard {
@@ -15,18 +17,26 @@ interface StatCard {
 }
 
 @Component({
-  selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TaskFormComponent],
   templateUrl: './dashboard.page.html',
 })
 export class DashboardPage implements OnInit {
   private readonly taskService = inject(TaskService);
+  private readonly taskOperations = inject(TaskOperationsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   isLoading = false;
   loadError = false;
   tasks: Task[] = [];
+  showCreateModal = false;
+  showEditModal = false;
+  isSubmittingTask = false;
+  isUpdatingTask = false;
+  createError = '';
+  editError = '';
+  taskBeingEdited: Task | null = null;
 
   readonly statsCards: StatCard[] = [
     {
@@ -91,6 +101,95 @@ export class DashboardPage implements OnInit {
       });
   }
 
+  openCreateModal(): void {
+    if (this.isSubmittingTask) {
+      return;
+    }
+    this.createError = '';
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal = false;
+    this.createError = '';
+  }
+
+  handleCancelCreate(): void {
+    if (this.isSubmittingTask) {
+      return;
+    }
+    this.closeCreateModal();
+  }
+
+  async handleCreateSubmit(payload: CreateTaskPayload): Promise<void> {
+    this.createError = '';
+    this.isSubmittingTask = true;
+    let createdSuccessfully = false;
+
+    try {
+      const createdTask = await firstValueFrom(
+        this.taskOperations.createTask(payload).pipe(takeUntilDestroyed(this.destroyRef))
+      );
+      this.tasks = [createdTask, ...this.tasks];
+      createdSuccessfully = true;
+    } catch (error) {
+      this.createError = this.extractErrorMessage(error, 'Failed to create task. Please try again.');
+    } finally {
+      if (createdSuccessfully) {
+        this.closeCreateModal();
+        this.cdr.detectChanges();
+      }
+      this.isSubmittingTask = false;
+    }
+  }
+
+  openEditModal(task: Task): void {
+    if (this.isUpdatingTask) {
+      return;
+    }
+    this.taskBeingEdited = task;
+    this.editError = '';
+    this.showEditModal = true;
+  }
+
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.taskBeingEdited = null;
+    this.editError = '';
+  }
+
+  handleCancelEdit(): void {
+    if (this.isUpdatingTask) {
+      return;
+    }
+    this.closeEditModal();
+  }
+
+  async handleEditSubmit(payload: CreateTaskPayload): Promise<void> {
+    if (!this.taskBeingEdited) {
+      return;
+    }
+    this.editError = '';
+    this.isUpdatingTask = true;
+    let updatedSuccessfully = false;
+
+    try {
+      const updatedTask = await firstValueFrom(
+        this.taskOperations.updateTask(this.taskBeingEdited._id, payload).pipe(takeUntilDestroyed(this.destroyRef))
+      );
+      this.tasks = this.tasks.map((existing: Task) => (existing._id === updatedTask._id ? updatedTask : existing));
+      updatedSuccessfully = true;
+    } catch (error) {
+      this.editError = this.extractErrorMessage(error, 'Failed to update task. Please try again.');
+    } finally {
+      if (updatedSuccessfully) {
+        this.closeEditModal();
+        this.cdr.detectChanges();
+      }
+      this.isUpdatingTask = false;
+    }
+  }
+
   retryLoad(): void {
     this.loadTasks();
   }
@@ -117,5 +216,26 @@ export class DashboardPage implements OnInit {
       low: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
     };
     return `${base} ${palette[priority]}`;
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (!error) {
+      return fallback;
+    }
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (error instanceof Error) {
+      return error.message || fallback;
+    }
+
+    const maybeHttpError = error as { error?: { message?: string } };
+    if (maybeHttpError?.error?.message) {
+      return maybeHttpError.error.message;
+    }
+
+    return fallback;
   }
 }

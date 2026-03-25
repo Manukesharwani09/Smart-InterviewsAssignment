@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { TasksResponse } from '../models/task.types';
+import { CreateTaskPayload, TaskResponse, TasksResponse } from '../models/task.types';
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
@@ -9,11 +9,20 @@ export class TaskService {
   private readonly baseUrl = '/api/v1/tasks';
 
   getTasks(): Observable<TasksResponse> {
-    console.log('Fetching tasks from API...', this.baseUrl);
-    const res= this.http.get<TasksResponse>(this.baseUrl, {
+    return this.http.get<TasksResponse>(this.baseUrl, {
       withCredentials: true,
     });
-    console.log('Fetched tasks:', res);
-    return res;
+  }
+
+  createTask(payload: CreateTaskPayload): Observable<TaskResponse> {
+    return this.http.post<TaskResponse>(this.baseUrl, payload, {
+      withCredentials: true,
+    });
+  }
+
+  updateTask(taskId: string, payload: CreateTaskPayload): Observable<TaskResponse> {
+    return this.http.put<TaskResponse>(`${this.baseUrl}/${taskId}`, payload, {
+      withCredentials: true,
+    });
   }
 }
