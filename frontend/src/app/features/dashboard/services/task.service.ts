@@ -14,6 +14,19 @@ export interface TaskQueryParams {
   sortOrder?: string;
 }
 
+export interface TaskAnalyticsSummary {
+  totals: {
+    total: number;
+    completed: number;
+    pending: number;
+    completionPercentage: number;
+  };
+  breakdown: {
+    status: Record<string, number>;
+    priority: Record<string, number>;
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   private readonly http = inject(HttpClient);
@@ -48,6 +61,12 @@ export class TaskService {
 
   deleteTask(taskId: string): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.baseUrl}/${taskId}`, {
+      withCredentials: true,
+    });
+  }
+
+  getAnalytics(): Observable<ApiResponse<TaskAnalyticsSummary>> {
+    return this.http.get<ApiResponse<TaskAnalyticsSummary>>(`${this.baseUrl}/analytics/summary`, {
       withCredentials: true,
     });
   }

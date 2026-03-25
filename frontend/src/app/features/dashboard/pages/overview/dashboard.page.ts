@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, Subscription, debounceTime, distinctUntilChanged, finalize, firstValueFrom } from 'rxjs';
+import { Subject, catchError, debounceTime, distinctUntilChanged, finalize, firstValueFrom, of, retry, switchMap, tap, timeout } from 'rxjs';
 import { TaskFormComponent } from '../../components/task-form/task-form.component';
 import { CreateTaskPayload, Task, TaskPriority, TaskStatus } from '../../models/task.types';
 import { TaskOperationsService } from '../../services/task-operations.service';
-import { TaskQueryParams, TaskService } from '../../services/task.service';
+import { TaskAnalyticsSummary, TaskQueryParams, TaskService } from '../../services/task.service';
 
 interface StatCard {
   label: string;
@@ -15,6 +15,13 @@ interface StatCard {
   iconViewBox: string;
   accentClass: string;
 }
+
+type AnalyticsTotals = {
+  total: number;
+  completed: number;
+  pending: number;
+  completionPercentage: number;
+};
 
 @Component({
   standalone: true,
@@ -104,6 +111,7 @@ export class DashboardPage implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
 
   isLoading = false;
+  isAnalyticsLoading = true;
   loadError = false;
   tasks: Task[] = [];
   showCreateModal = false;
@@ -124,13 +132,38 @@ export class DashboardPage implements OnInit {
   limit = 10;
   totalPages = 1;
   totalTasks = 0;
+  private readonly defaultAnalytics: AnalyticsTotals = {
+    total: 0,
+    completed: 0,
+    pending: 0,
+    completionPercentage: 0,
+  };
+  analytics: AnalyticsTotals = {
+    total: 0,
+    completed: 0,
+    pending: 0,
+    completionPercentage: 0,
+  };
+  hasAnalyticsLoaded = false;
+  private hasSuccessfulTaskLoad = false;
+  private initialLoadRetryAttempted = false;
+  private initialLoadRetryHandle: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.initialLoadRetryHandle) {
+        clearTimeout(this.initialLoadRetryHandle);
+        this.initialLoadRetryHandle = null;
+      }
+    });
+  }
   private readonly searchTermChanges$ = new Subject<string>();
-  private tasksSubscription?: Subscription;
+  private readonly taskLoadTrigger$ = new Subject<void>();
 
   readonly statsCards: StatCard[] = [
     {
       label: 'Total Tasks',
-      value: '42',
+      value: '--',
       change: '+4 vs last week',
       iconViewBox: '0 0 24 24',
       iconPath: 'M4 6h16M4 12h16M4 18h10',
@@ -138,7 +171,7 @@ export class DashboardPage implements OnInit {
     },
     {
       label: 'Completed Tasks',
-      value: '24',
+      value: '--',
       change: '57% completion rate',
       iconViewBox: '0 0 24 24',
       iconPath: 'm5 12 4 4 10-10',
@@ -146,7 +179,7 @@ export class DashboardPage implements OnInit {
     },
     {
       label: 'Pending Tasks',
-      value: '14',
+      value: '--',
       change: 'Next up in backlog',
       iconViewBox: '0 0 24 24',
       iconPath: 'M12 6v6h4m4 0a8 8 0 1 1-16 0 8 8 0 0 1 16 0z',
@@ -154,7 +187,7 @@ export class DashboardPage implements OnInit {
     },
     {
       label: 'Completion %',
-      value: '68%',
+      value: '--',
       change: '+6% vs prior sprint',
       iconViewBox: '0 0 24 24',
       iconPath: 'M12 6v6l4 2m4-2a8 8 0 1 1-16 0 8 8 0 0 1 16 0z',
@@ -171,42 +204,96 @@ export class DashboardPage implements OnInit {
         this.loadTasks();
       });
 
+    this.initializeTaskStream();
     this.loadTasks();
+    void this.loadAnalytics();
+  }
+
+  private initializeTaskStream(): void {
+    this.taskLoadTrigger$
+      .pipe(
+        tap(() => {
+          this.isLoading = true;
+          this.loadError = false;
+        }),
+        switchMap(() =>
+          this.taskService
+            .getTasks(this.buildQueryParams())
+            .pipe(
+              timeout({ each: 10000 }),
+              retry({ count: 1, delay: 1000 }),
+              catchError((error) => {
+                this.loadError = true;
+                console.error('Failed to load tasks', error);
+                return of(null);
+              }),
+              finalize(() => {
+                this.isLoading = false;
+                this.cdr.markForCheck();
+              })
+            )
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => {
+        if (!response?.data) {
+          this.scheduleInitialTaskRetry();
+          return;
+        }
+
+        const payload = response.data;
+        this.tasks = payload.tasks ?? [];
+        const meta = (payload.meta ?? {}) as { total?: number; page?: number; totalPages?: number };
+        const derivedTotalPages = Number(meta?.totalPages ?? 1);
+        this.totalPages = Number.isFinite(derivedTotalPages) && derivedTotalPages > 0 ? derivedTotalPages : 1;
+        const nextPage = Number(meta?.page ?? this.page);
+        this.page = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1;
+        const total = Number(meta?.total ?? this.tasks.length);
+        this.totalTasks = Number.isFinite(total) && total >= 0 ? total : this.tasks.length;
+
+        this.loadError = false;
+        this.hasSuccessfulTaskLoad = true;
+        this.initialLoadRetryAttempted = false;
+        if (this.initialLoadRetryHandle) {
+          clearTimeout(this.initialLoadRetryHandle);
+          this.initialLoadRetryHandle = null;
+        }
+        this.cdr.markForCheck();
+      });
+  }
+
+  private async loadAnalytics(): Promise<void> {
+    this.isAnalyticsLoading = true;
+
+    try {
+      const response = await firstValueFrom(
+        this.taskService
+          .getAnalytics()
+          .pipe(timeout({ each: 10000 }), retry({ count: 1, delay: 1000 }), takeUntilDestroyed(this.destroyRef))
+      );
+
+      const totals = response?.data?.totals ?? ({} as TaskAnalyticsSummary['totals']);
+      this.analytics = {
+        total: this.toSafeNumber(totals?.total),
+        completed: this.toSafeNumber(totals?.completed),
+        pending: this.toSafeNumber(totals?.pending),
+        completionPercentage: this.formatPercentage(totals?.completionPercentage),
+      };
+      this.hasAnalyticsLoaded = true;
+      this.updateStatCardValues();
+    } catch (error) {
+      console.error('Failed to load analytics', error);
+      this.analytics = { ...this.defaultAnalytics };
+      this.hasAnalyticsLoaded = true;
+      this.updateStatCardValues();
+    } finally {
+      this.isAnalyticsLoading = false;
+      this.cdr.markForCheck();
+    }
   }
 
   loadTasks(): void {
-    this.tasksSubscription?.unsubscribe();
-    this.isLoading = true;
-    this.loadError = false;
-
-    const queryParams = this.buildQueryParams();
-
-    this.tasksSubscription = this.taskService
-      .getTasks(queryParams)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.isLoading = false;
-        })
-      )
-      .subscribe({
-        next: (response) => {
-          const payload = response.data;
-          this.tasks = payload?.tasks ?? [];
-          const meta = (payload?.meta ?? {}) as { total?: number; page?: number; totalPages?: number };
-          const derivedTotalPages = Number(meta?.totalPages ?? 1);
-          this.totalPages = Number.isFinite(derivedTotalPages) && derivedTotalPages > 0 ? derivedTotalPages : 1;
-          const nextPage = Number(meta?.page ?? this.page);
-          this.page = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1;
-          const total = Number(meta?.total ?? this.tasks.length);
-          this.totalTasks = Number.isFinite(total) && total >= 0 ? total : this.tasks.length;
-          this.loadError = false;
-        },
-        error: (error) => {
-          this.loadError = true;
-          console.error('Failed to load tasks', error);
-        },
-      });
+    this.taskLoadTrigger$.next();
   }
 
   handleSearchInput(value: string): void {
@@ -294,6 +381,7 @@ export class DashboardPage implements OnInit {
         this.cdr.detectChanges();
         this.page = 1;
         this.loadTasks();
+        void this.loadAnalytics();
       }
       this.isSubmittingTask = false;
     }
@@ -341,6 +429,7 @@ export class DashboardPage implements OnInit {
       if (updatedSuccessfully) {
         this.closeEditModal();
         this.cdr.detectChanges();
+        void this.loadAnalytics();
       }
       this.isUpdatingTask = false;
     }
@@ -360,6 +449,7 @@ export class DashboardPage implements OnInit {
       this.totalTasks = Math.max(0, this.totalTasks - 1);
       const estimatedPages = Math.max(1, Math.ceil(this.totalTasks / this.limit));
       this.totalPages = estimatedPages;
+      void this.loadAnalytics();
     } catch (error) {
       console.error('Failed to delete task', error);
       window.alert('Failed to delete task');
@@ -401,6 +491,54 @@ export class DashboardPage implements OnInit {
       low: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
     };
     return `${base} ${palette[priority]}`;
+  }
+
+  private scheduleInitialTaskRetry(): void {
+    if (this.hasSuccessfulTaskLoad || this.initialLoadRetryAttempted) {
+      return;
+    }
+    this.initialLoadRetryAttempted = true;
+    this.initialLoadRetryHandle = setTimeout(() => {
+      this.initialLoadRetryHandle = null;
+      this.loadTasks();
+    }, 1200);
+  }
+
+  private updateStatCardValues(): void {
+    this.statsCards.forEach((card) => {
+      switch (card.label) {
+        case 'Total Tasks':
+          card.value = this.analytics.total.toString();
+          break;
+        case 'Completed Tasks':
+          card.value = this.analytics.completed.toString();
+          break;
+        case 'Pending Tasks':
+          card.value = this.analytics.pending.toString();
+          break;
+        case 'Completion %':
+          card.value = `${this.analytics.completionPercentage}%`;
+          break;
+        default:
+          break;
+      }
+    });
+  }
+
+  private toSafeNumber(value: unknown): number {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      return 0;
+    }
+    return Math.round(numeric);
+  }
+
+  private formatPercentage(value: unknown): number {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      return 0;
+    }
+    return Number(numeric.toFixed(1));
   }
 
   private buildQueryParams(): TaskQueryParams {

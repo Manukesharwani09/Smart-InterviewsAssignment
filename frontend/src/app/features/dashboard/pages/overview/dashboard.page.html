@@ -16,7 +16,7 @@
     </div>
   </header>
 
-  <div *ngIf="isLoading; else statsContent" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <div *ngIf="!hasAnalyticsLoaded; else statsContent" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
     @for (skeleton of [1, 2, 3, 4]; track skeleton) {
       <div class="rounded-2xl border border-white/5 bg-white/5 p-6">
         <div class="flex animate-pulse flex-col gap-3">
