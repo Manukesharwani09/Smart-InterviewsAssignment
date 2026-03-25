@@ -2,6 +2,7 @@ export interface ApiResponse<TData> {
   statusCode: number;
   message: string;
   data: TData;
+  success?: boolean;
 }
 
 export interface AuthUser {
@@ -17,6 +18,10 @@ export interface AuthUser {
 export interface AuthSuccessPayload {
   user: AuthUser;
   accessToken: string;
+}
+
+export interface AuthUserResponse {
+  user: AuthUser;
 }
 
 export interface LoginPayload {

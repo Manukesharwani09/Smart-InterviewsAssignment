@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthApiService } from '../../services/auth.api';
+import { AuthSessionService } from '../../services/auth.session';
 
 @Component({
   selector: 'app-signup-page',
@@ -23,6 +24,7 @@ export class SignupPage {
   protected readonly subtitle = 'Design a calmer workflow with automations that keep everything in sync.';
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
+  private readonly session = inject(AuthSessionService);
   protected showPassword = false;
   protected showConfirmPassword = false;
   protected submitted = false;
@@ -81,6 +83,9 @@ export class SignupPage {
       .pipe(finalize(() => (this.isSubmitting = false)))
       .subscribe({
         next: response => {
+          if (response.data) {
+            this.session.setSession(response.data, { remember: true });
+          }
           this.serverMessage =
             response.message ?? 'Account created! Check your inbox to verify your email.';
           this.signupForm.patchValue({ password: '', confirmPassword: '' });

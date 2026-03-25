@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { AuthApiService } from '../../services/auth.api';
+import { AuthSessionService } from '../../services/auth.session';
 
 @Component({
   selector: 'app-login-page',
@@ -17,6 +18,7 @@ export class LoginPage {
   protected readonly subtitle = 'Step back into your flow and keep priorities moving forward.';
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
+  private readonly session = inject(AuthSessionService);
   protected readonly loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
@@ -43,12 +45,15 @@ export class LoginPage {
     }
 
     this.isSubmitting = true;
-    const { email, password } = this.loginForm.getRawValue();
+    const { email, password, remember } = this.loginForm.getRawValue();
     this.authApi
       .login({ email: email.trim().toLowerCase(), password: password.trim() })
       .pipe(finalize(() => (this.isSubmitting = false)))
       .subscribe({
         next: response => {
+          if (response.data) {
+            this.session.setSession(response.data, { remember });
+          }
           this.serverMessage = response.message ?? 'Authenticated! Redirecting to your workspace...';
         },
         error: (error: HttpErrorResponse) => {
