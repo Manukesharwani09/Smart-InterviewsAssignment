@@ -120,7 +120,11 @@
       type="date"
       formControlName="dueDate"
       class="mt-2 w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white focus:border-cyan-300 focus:outline-none"
-    />
+      [attr.min]="(todayString)"
+      />
+      <p *ngIf="taskForm.controls.dueDate.errors?.['pastDate'] && (taskForm.controls.dueDate.dirty || taskForm.controls.dueDate.touched)" class="mt-1 text-xs text-rose-300">
+        Due date cannot be before today.
+      </p>
   </div>
 
   <p *ngIf="errorMessage" class="text-sm text-rose-300">{{ errorMessage }}</p>

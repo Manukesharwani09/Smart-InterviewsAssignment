@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
-import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators, ValidatorFn, AbstractControl } from '@angular/forms';
 import { CreateTaskPayload, Task, TaskPriority, TaskStatus } from '../../models/task.types';
 
 @Component({
@@ -23,8 +23,42 @@ export class TaskFormComponent implements OnChanges {
     description: [''],
     status: ['todo' as TaskStatus],
     priority: ['medium' as TaskPriority],
-    dueDate: [''],
+    dueDate: this.fb.control('', { nonNullable: true, validators: [this.futureOrTodayDateValidator()] }),
   });
+
+   /**
+    * Validator: due date must be today or in the future (not before today)
+    */
+  /**
+   * Validator: due date must be today or in the future (not before today)
+   */
+  private futureOrTodayDateValidator(): ValidatorFn {
+    return (control: AbstractControl) => {
+      const value = control.value;
+      if (!value) return null;
+      // Compare as yyyy-mm-dd
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+      if (value < todayStr) {
+        return { pastDate: true };
+      }
+      return null;
+    };
+  }
+ 
+   /**
+    * Used for min attribute on date input
+    */
+   get todayString(): string {
+     const today = new Date();
+     const yyyy = today.getFullYear();
+     const mm = String(today.getMonth() + 1).padStart(2, '0');
+     const dd = String(today.getDate()).padStart(2, '0');
+     return `${yyyy}-${mm}-${dd}`;
+   }
 
   readonly statusOptions: Array<{ label: string; value: TaskStatus }> = [
     { label: 'Todo', value: 'todo' },
