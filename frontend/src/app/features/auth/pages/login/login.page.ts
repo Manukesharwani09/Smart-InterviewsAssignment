@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -20,6 +20,7 @@ export class LoginPage {
   private readonly authApi = inject(AuthApiService);
   private readonly router = inject(Router);
   private readonly session = inject(AuthSessionService);
+  private readonly cdr = inject(ChangeDetectorRef);
   protected readonly loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
@@ -59,7 +60,11 @@ export class LoginPage {
           this.router.navigate(['/dashboard']);
         },
         error: (error: HttpErrorResponse) => {
+          this.isSubmitting = false;
+          this.submitted = true; // Ensure error message shows after failed login
+          console.log('Login error:', error);
           this.errorMessage = error.error?.message ?? 'Unable to sign in. Please verify your credentials.';
+          this.cdr.markForCheck();
         }
       });
   }
