@@ -21,7 +21,7 @@ import { AuthSessionService } from '../../services/auth.session';
 })
 export class SignupPage {
   protected readonly title = 'Create your TaskTrackr account';
-  protected readonly subtitle = 'Design a calmer workflow with automations that keep everything in sync.';
+  protected readonly subtitle = 'Plan your work';
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
   private readonly router = inject(Router);
