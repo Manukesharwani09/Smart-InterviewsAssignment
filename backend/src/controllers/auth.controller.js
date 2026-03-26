@@ -34,12 +34,17 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Name, username, email, and password are required");
   }
 
-  const existingUser = await User.findOne({
-    $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }],
-  });
-
-  if (existingUser) {
-    throw new ApiError(409, "Username or email already taken");
+  // Check for existing username and email separately
+  const [usernameTaken, emailTaken] = await Promise.all([
+    User.findOne({ username: username.toLowerCase() }),
+    User.findOne({ email: email.toLowerCase() }),
+  ]);
+  if (usernameTaken && emailTaken) {
+    throw new ApiError(409, "Username and email already taken");
+  } else if (usernameTaken) {
+    throw new ApiError(409, "Username already taken");
+  } else if (emailTaken) {
+    throw new ApiError(409, "Email already taken");
   }
 
   const user = await User.create({
