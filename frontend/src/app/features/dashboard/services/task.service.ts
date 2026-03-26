@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../../auth/models/auth.types';
+import { API_BASE_URL } from '../../../api.config';
 import { CreateTaskPayload, TaskResponse, TasksResponse } from '../models/task.types';
 
 export interface TaskQueryParams {
@@ -30,7 +31,7 @@ export interface TaskAnalyticsSummary {
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/tasks';
+  private readonly baseUrl = `${API_BASE_URL}/tasks`;
 
   getTasks(params: TaskQueryParams = {}): Observable<TasksResponse> {
     let httpParams = new HttpParams();

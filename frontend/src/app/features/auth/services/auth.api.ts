@@ -9,10 +9,13 @@ import {
   SignupPayload
 } from '../models/auth.types';
 
+
+import { API_BASE_URL } from '../../../api.config';
+
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/auth';
+  private readonly baseUrl = `${API_BASE_URL}/auth`;
 
   login(payload: LoginPayload): Observable<ApiResponse<AuthSuccessPayload>> {
     return this.http.post<ApiResponse<AuthSuccessPayload>>(`${this.baseUrl}/login`, payload, {
