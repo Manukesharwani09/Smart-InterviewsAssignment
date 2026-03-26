@@ -54,20 +54,65 @@ const getTasks = asyncHandler(async (req, res) => {
 
   const normalizedSort = sortFieldMap[sortBy?.toLowerCase()] || "dueDate";
   const sortDirection = sortOrder === "desc" ? -1 : 1;
-  const sortOptions = { [normalizedSort]: sortDirection };
-
   const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
   const pageSize = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 50);
   const skip = (pageNumber - 1) * pageSize;
 
-  const [tasks, total] = await Promise.all([
-    Task.find(filters).sort(sortOptions).skip(skip).limit(pageSize),
-    Task.countDocuments(filters),
-  ]);
+  // Aggregation pipeline for sorting and pagination
+  const matchStage = { $match: filters };
+  let sortStage;
+
+  if (normalizedSort === "priority") {
+    // Custom priority order: high > medium > low > others
+    sortStage = {
+      $addFields: {
+        priorityOrder: {
+          $cond: [
+            { $eq: ["$priority", "high"] }, 1,
+            { $cond: [
+              { $eq: ["$priority", "medium"] }, 2,
+              { $cond: [
+                { $eq: ["$priority", "low"] }, 3,
+                99
+              ]}
+            ]}
+          ]
+        }
+      }
+    };
+  }
+
+  let sortObj;
+  if (normalizedSort === "priority") {
+    // Always sort high (1) > medium (2) > low (3) regardless of sortDirection
+    sortObj = { priorityOrder: 1, createdAt: -1 };
+  } else {
+    sortObj = { [normalizedSort]: sortDirection, createdAt: -1 };
+  }
+
+  const pipeline = [matchStage];
+  if (normalizedSort === "priority") {
+    pipeline.push(sortStage);
+  }
+  pipeline.push({ $sort: sortObj });
+  pipeline.push({ $skip: skip });
+  pipeline.push({ $limit: pageSize });
+
+  // Get total count for pagination
+  const total = await Task.countDocuments(filters);
+  const tasks = await Task.aggregate(pipeline);
+
+  // Always include priorityOrder for debugging if sorting by priority
+  const debugTasks = tasks.map(t => {
+    if (normalizedSort === "priority") {
+      return { ...t, debugPriorityOrder: t.priorityOrder };
+    }
+    return t;
+  });
 
   return res.status(200).json(
     new ApiResponse(200, "Tasks fetched successfully", {
-      tasks,
+      tasks: debugTasks,
       meta: {
         total,
         page: pageNumber,
